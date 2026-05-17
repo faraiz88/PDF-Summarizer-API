@@ -1,6 +1,7 @@
 #  PDF Summarizer API
 
 AI-powered backend system that automates PDF document processing and generates structured AI summaries, key insights, and important topics from uploaded files. Built with FastAPI, Celery, Redis, PostgreSQL, Docker, and Gemini AI for scalable asynchronous processing.
+
 ---
 
 ## ✨ Features
