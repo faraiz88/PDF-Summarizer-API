@@ -1,10 +1,10 @@
-# PDF Summarizer API
+#  PDF Summarizer API
 
 AI-powered backend API for asynchronous PDF processing and intelligent document summarization using FastAPI, Celery, Redis, PostgreSQL, Docker, and Gemini AI.
 
 ---
 
-## Features
+## ✨ Features
 
 * Upload and process PDF documents
 * Extract text from PDFs automatically
@@ -18,7 +18,7 @@ AI-powered backend API for asynchronous PDF processing and intelligent document 
 
 ---
 
-## Tech Stack
+## 🛠 Tech Stack
 
 * Python
 * FastAPI
@@ -32,7 +32,7 @@ AI-powered backend API for asynchronous PDF processing and intelligent document 
 
 ---
 
-## Architecture
+## 🏗 Architecture
 
 ```text
 Client Request
@@ -54,7 +54,7 @@ Results stored and returned via API
 
 ---
 
-## API Endpoints
+## 🌐 API Endpoints
 
 | Method | Endpoint          | Description                 |
 | ------ | ----------------- | --------------------------- |
@@ -64,16 +64,16 @@ Results stored and returned via API
 
 ---
 
-## Local Setup
+## ⚙ Local Setup
 
-### Clone Repository
+### 📥 Clone Repository
 
 ```bash
 git clone https://github.com/faraiz88/PDF-Summarizer-API.git
 cd PDF-Summarizer-API
 ```
 
-### Create Environment Variables
+### 🔐 Create Environment Variables
 
 Create `.env`
 
@@ -83,13 +83,13 @@ DATABASE_URL=postgresql://username:password@postgres:5432/pdf_summarizer
 REDIS_URL=redis://redis:6379/0
 ```
 
-### Start Application
+### ▶ Start Application
 
 ```bash
 docker-compose up --build
 ```
 
-### Open API Docs
+### 📄 Open API Docs
 
 ```text
 http://127.0.0.1:8000/docs
@@ -97,7 +97,7 @@ http://127.0.0.1:8000/docs
 
 ---
 
-## Highlights
+## 🚀 Highlights
 
 * Scalable asynchronous architecture using Celery + Redis
 * Containerized multi-service backend with Docker Compose
@@ -108,6 +108,7 @@ http://127.0.0.1:8000/docs
 
 ---
 
-## Author
+## 👨‍💻 Author
 
 Mohammed Faraiz
+
