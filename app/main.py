@@ -24,6 +24,13 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
+@app.get("/")
+def home():
+    return {
+        "message": "PDF Summarizer API is running"
+    }
+        
+
 @app.get(
     "/documents/{document_id}",
     response_model=DocumentResponse
