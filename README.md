@@ -4,6 +4,13 @@ AI-powered backend system that automates PDF document processing and generates s
 
 ---
 
+## 🌐 Live Deployment
+
+- Live API: https://pdf-summarizer-api-5zbc.onrender.com
+- Swagger Docs: https://pdf-summarizer-api-5zbc.onrender.com/docs
+
+---
+
 ## ✨ Features
 
 * Upload and process PDF documents
@@ -58,6 +65,7 @@ Results stored and returned via API
 
 | Method | Endpoint          | Description                 |
 | ------ | ----------------- | --------------------------- |
+| GET    | `/`               | API status check            |
 | POST   | `/upload`         | Upload PDF for processing   |
 | GET    | `/documents`      | Get all processed documents |
 | GET    | `/documents/{id}` | Get single document details |
