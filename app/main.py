@@ -1,15 +1,18 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from app.celery_worker import process_pdf
-from app.database import SessionLocal
+from app.database import SessionLocal, Base, engine
 from app.models import Document
 from app.schemas import DocumentResponse
+from app import models
 import os
 import shutil
 import uuid
 import logging
 
 
+
 app = FastAPI()
+Base.metadata.create_all(bind=engine)
 
 # Logging Configuration
 logging.basicConfig(
