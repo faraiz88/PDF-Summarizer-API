@@ -12,6 +12,7 @@ load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel("models/gemini-2.5-flash")
+REDIS_URL = os.getenv("REDIS_URL")
 
 
 def summarize_text(text: str):
@@ -28,8 +29,8 @@ def summarize_text(text: str):
 
 celery_app = Celery(
     "worker",
-    broker="redis://redis:6379/0",
-    backend="redis://redis:6379/0"
+    broker=REDIS_URL,
+    backend=REDIS_URL
 )
 
 
