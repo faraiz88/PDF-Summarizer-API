@@ -41,9 +41,6 @@ services:
     image: redis:7
     container_name: pdf_redis
 
-    ports:
-      - "6379:6379"
-
 
   postgres:
     image: postgres:16
