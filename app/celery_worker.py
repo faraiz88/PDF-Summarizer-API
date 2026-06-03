@@ -47,22 +47,22 @@ def extract_text_from_pdf(pdf_path: str):
 
 
 @celery_app.task
-def process_pdf(file_path, document_id):
-    extracted_text = extract_text_from_pdf(file_path)
+def process_pdf(extracted_text, document_id):
     summary = summarize_text(extracted_text)
+
     db = SessionLocal()
     try:
         document = db.query(Document).filter(
             Document.id == document_id
         ).first()
+
         if document:
             document.extracted_text = extracted_text
             document.summary = summary
             document.status = "completed"
 
-            db.add(document)
             db.commit()
-            db.refresh(document)
+
     except Exception as e:
         db.rollback()
         raise e
