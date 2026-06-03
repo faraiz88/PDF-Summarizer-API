@@ -17,19 +17,15 @@ A backend API that accepts any PDF and returns a structured AI-generated summary
 
 ## Demo
 
-![Demo](./assets/demo.gif)
+![Demo](./assets/Demo_gif.gif)
 
 ---
 
-## What Problem This Solves
-
-Reading and extracting value from PDFs is something engineers, researchers, and businesses do constantly — and it's slow at scale. This API automates the entire workflow:
+## What This Does
 
 - Client uploads a PDF and gets a `document_id` back instantly
 - A background worker extracts the text and sends it to Gemini AI
 - The structured result is persisted in PostgreSQL and retrievable at any time
-
-This pattern — async task queue + LLM processing — maps directly to real-world document automation pipelines used in legal, finance, and research tooling.
 
 ---
 
@@ -101,13 +97,12 @@ POST /upload
   → extracts text in-memory via PyPDF2
   → rejects scanned/image-based PDFs with 422
   → saves Document record to PostgreSQL (status: "processing")
-  → dispatches Celery task via Redis
+  → dispatches Celery task with extracted text via Redis
   → returns 202 immediately
 
 (background) Celery worker
-  → receives extracted text from Redis
-  → calls Gemini 2.5 Flash
-  → writes result back to PostgreSQL
+  → calls Gemini 2.5 Flash with extracted text
+  → writes structured result back to PostgreSQL
   → sets status: "completed" (or "failed" on error)
 ```
 
