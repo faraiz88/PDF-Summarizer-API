@@ -50,7 +50,7 @@ services:
 
     environment:
       POSTGRES_USER: faraiz
-      POSTGRES_PASSWORD: 2202
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: pdf_summarizer
 
     ports:

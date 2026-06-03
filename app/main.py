@@ -78,7 +78,7 @@ def get_documents():
         db.close()
 
 
-@app.post("/upload")
+@app.post("/upload", status_code=202)
 async def upload_pdf(file: UploadFile = File(...)):
     logger.info(f"Upload request received: {file.filename}")
 

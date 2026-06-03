@@ -33,26 +33,21 @@ def summarize_text(text: str):
 
 @celery_app.task
 def process_pdf(extracted_text, document_id):
-    summary = summarize_text(extracted_text)
-
     db = SessionLocal()
     try:
-        document = db.query(Document).filter(
-            Document.id == document_id
-        ).first()
-
+        summary = summarize_text(extracted_text)
+        document = db.query(Document).filter(Document.id == document_id).first()
         if document:
             document.extracted_text = extracted_text
             document.summary = summary
             document.status = "completed"
-
             db.commit()
-
     except Exception as e:
         db.rollback()
+        document = db.query(Document).filter(Document.id == document_id).first()
+        if document:
+            document.status = "failed"  # ← this line
+            db.commit()
         raise e
-
     finally:
         db.close()
-
-    return summary
