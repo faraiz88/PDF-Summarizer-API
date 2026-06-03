@@ -6,7 +6,6 @@ from app.models import Document
 from app.schemas import DocumentResponse
 from app import models
 import io
-import os
 import logging
 
 app = FastAPI()
@@ -17,9 +16,6 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 @app.get("/")
