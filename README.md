@@ -4,7 +4,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
 [![Live API](https://img.shields.io/badge/Live%20API-Railway-blueviolet)](https://pdf-summarizer-api-production.up.railway.app/docs)
 
-A backend API that accepts text-based PDFs and returns AI-generated summaries processed asynchronously using Celery and Gemini AI.
+A backend API that accepts text-based PDFs and returns AI-generated summaries — deployed to production on Railway with a live Swagger UI.
 
 ---
 
@@ -67,16 +67,16 @@ PDF extraction and LLM inference can each take several seconds. A synchronous de
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| Web Framework | FastAPI | Async REST API, automatic OpenAPI docs |
-| Task Queue | Celery | Background job processing |
-| Message Broker | Redis 7 | Queue transport between API and workers |
-| Database | PostgreSQL 16 + SQLAlchemy | Persistent document and summary storage |
-| AI Model | Google Gemini 2.5 Flash | Structured PDF summarization |
-| PDF Parsing | PyPDF2 | In-memory text extraction from uploads |
-| Containerisation | Docker + Docker Compose | Multi-service environment |
-| Deployment | Railway | Cloud hosting |
+| Layer | Technology |
+|---|---|
+| Web Framework | FastAPI |
+| Task Queue | Celery |
+| Message Broker | Redis 7 |
+| Database | PostgreSQL 16 + SQLAlchemy |
+| AI Model | Google Gemini 2.5 Flash |
+| PDF Parsing | PyPDF2 |
+| Containerisation | Docker + Docker Compose |
+| Deployment | Railway |
 
 ---
 
@@ -116,27 +116,23 @@ curl -X POST https://pdf-summarizer-api-production.up.railway.app/upload \
 ### Example Upload Response (202)
 
 ```json
-
 {
   "message": "PDF uploaded and queued for processing",
   "document_id": 8,
   "status": "processing"
 }
-
 ```
 
 ### Example Document Response (200)
 
 ```json
-
 {
   "id": 8,
-  "original_filename": "Hyderabad_Weather_Report.pdf",
+  "original_filename": "sample_document.pdf",
   "status": "completed",
-  "summary": "On Wednesday, June 3, 2026, Hyderabad, Telangana, is experiencing warm, humid, and partly sunny conditions at 84.9°F (29.4°C). There is a high (65%) probability of intermittent rain and possible thunderstorms later today, especially in the late afternoon and evening, marking the early transition to the Southwest Monsoon.\n\nThe 5-day forecast predicts continued warm temperatures (around 93-95°F / 34-35°C) with daily rain chances of 55-60%. The current weather is consistent with the imminent arrival of the monsoon, typically between June 5-15. Residents are advised to stay hydrated, carry rain gear, drive cautiously, and take general health and safety precautions for the approaching monsoon season.",
+  "summary": "A concise AI-generated summary of the uploaded document's key points and findings.",
   "created_at": "2026-06-03T02:30:36.488209"
 }
-
 ```
 
 ---
@@ -148,34 +144,22 @@ curl -X POST https://pdf-summarizer-api-production.up.railway.app/upload \
 - Docker & Docker Compose
 - A Gemini API key — [get one free at Google AI Studio](https://aistudio.google.com/)
 
-### 1. Clone
+### Steps
 
 ```bash
+# 1. Clone the repo
 git clone https://github.com/faraiz88/PDF-Summarizer-API.git
 cd PDF-Summarizer-API
-```
 
-### 2. Environment Variables
+# 2. Configure environment variables
+cp .env.example .env
+# Edit .env and fill in GOOGLE_API_KEY and POSTGRES_PASSWORD
 
-```env
-GOOGLE_API_KEY=your_gemini_api_key_here
-DATABASE_URL=postgresql://faraiz:yourpassword@postgres:5432/pdf_summarizer
-REDIS_URL=redis://redis:6379/0
-POSTGRES_PASSWORD=yourpassword
-```
-
-### 3. Start All Services
-
-```bash
+# 3. Start all services (api, worker, redis, postgres)
 docker-compose up --build
-```
 
-Starts four containers: `api`, `worker`, `redis`, and `postgres`.
-
-### 4. Open Swagger UI
-
-```
-http://localhost:8001/docs
+# 4. Open Swagger UI
+open http://localhost:8001/docs
 ```
 
 ---
@@ -194,17 +178,13 @@ PDF-Summarizer-API/
 ├── Dockerfile            # Python image, dependency installation
 ├── requirements.txt      # Pinned dependencies
 ├── create_tables.py      # Database initialisation helper
-└── .env.example          # Environment variable template
+├── .env.example          # Environment variable template
+└── assets/
+    └── Demo_gif.gif      # Demo animation
 ```
-
----
-
-## License
-
-MIT License
 
 ---
 
 ## Author
 
-Mohammed Faraiz
+Mohammed Faraiz — [GitHub](https://github.com/faraiz88)
