@@ -1,133 +1,188 @@
 # PDF Summarizer API
 
-![Python](https://img.shields.io/badge/Python-3.11-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
+> **Production-deployed** AI backend that accepts PDF uploads, extracts text, and returns structured AI summaries with key insights and important topics — built for scale with a fully asynchronous processing pipeline.
 
-A backend API that takes any PDF — research paper, report, contract, documentation — and returns a structured AI summary, key insights, and extracted topics in seconds. No manual reading. No copy-pasting into ChatGPT. Just upload and get results.
-
-Built to explore how asynchronous task queues and LLMs can be combined into a reliable, scalable backend pipeline.
-
----
-
-## Demo
-
-> Upload a PDF → task queued → Celery worker processes it → Gemini AI summarizes → results ready to fetch
-
-![Demo](./assets/demo.gif)
-
-*Running locally via Docker Compose. Live hosting not available due to Gemini AI API costs on free infrastructure.*
+[![Live API](https://img.shields.io/badge/Live%20API-Railway-blueviolet?style=for-the-badge)](https://pdf-summarizer-api-production.up.railway.app/docs)
+[![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Celery](https://img.shields.io/badge/Celery-5.x-37814A?style=for-the-badge)](https://docs.celeryq.dev/)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis)](https://redis.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)](https://docs.docker.com/compose/)
+[![Gemini AI](https://img.shields.io/badge/Gemini-2.5%20Flash-4285F4?style=for-the-badge&logo=google)](https://deepmind.google/technologies/gemini/)
 
 ---
 
-## The Problem It Solves
+## What This Project Does
 
-Reading and extracting value from PDFs is something engineers, researchers, and businesses do constantly — and it's tedious at scale. This API automates that entire workflow:
+Most teams waste hours manually reading through long reports, research papers, and contracts. This API solves that — upload any PDF and within seconds the system returns a structured AI-generated response containing a concise summary, key insights, and important topics covered, powered by Google Gemini 2.5 Flash.
 
-- A user uploads a PDF
-- The API immediately returns a task ID (non-blocking)
-- In the background, text is extracted and sent to Gemini AI
-- The structured result — summary, insights, topics — is stored and retrievable at any time
-
-This pattern (async task queue + LLM processing) is directly applicable to real-world document automation pipelines.
+The core design principle is **non-blocking processing**: the API accepts the file and returns immediately with a `document_id`, while a background Celery worker handles the heavy AI processing. The client polls for results when ready.
 
 ---
 
-## Features
+## Live Demo
 
-- Upload PDF files via a single REST endpoint
-- Non-blocking processing — API responds instantly, work happens in the background
-- Automatic text extraction with PyPDF2
-- Gemini AI generates a summary, key insights, and important topics per document
-- Task state tracked from `PENDING` → `COMPLETED` (or `FAILED`)
-- All results persisted in PostgreSQL — fetch anytime after processing
-- Fully containerized — runs with a single `docker-compose up` command
-
----
-
-## Sample API Response
-
-After uploading a PDF and polling `GET /documents/{id}`:
-
-```json
-{
-  "id": 7,
-  "original_filename": "Mohammed Faraiz-Resume.pdf",
-  "status": "completed",
-  "summary": "Mohammed Faraiz is a detail-oriented professional with over 4 years of experience in risk management, data analysis, and client account handling. He has a proven track record in analytical investigations, process optimization, and technical problem-solving, coupled with strong communication and mentoring skills. His experience includes roles as a Screening Specialist at Randstad, a Concession Abuse Prevention Specialist at Amazon, and an Associate Account Manager at Sutherland.",
-  "created_at": "2026-06-02T20:01:54.771903Z"
-}
-```
-
----
-
-## Tech Stack
-
-| Technology     | Purpose                     |
-| -------------- | --------------------------- |
-| Python         | Core language               |
-| FastAPI        | API framework               |
-| Celery         | Async background processing |
-| Redis          | Task queue broker           |
-| PostgreSQL     | Persistent storage          |
-| SQLAlchemy     | ORM                         |
-| Docker Compose | Multi-service orchestration |
-| Gemini AI      | LLM summarization           |
-| PyPDF2         | PDF text extraction         |
+| Resource | Link |
+|---|---|
+| Swagger UI (Interactive Docs) | https://pdf-summarizer-api-production.up.railway.app/docs |
+| Base API | https://pdf-summarizer-api-production.up.railway.app |
 
 ---
 
 ## Architecture
 
-```text
-Client uploads PDF
-        ↓
-FastAPI receives file
-        ↓
-PostgreSQL stores metadata  (status: PENDING)
-        ↓
-Task ID returned to client immediately
-        ↓
-Task pushed to Redis queue
-        ↓
-Celery Worker picks up task
-        ↓
-PyPDF2 extracts raw text
-        ↓
-Gemini AI generates summary + insights + topics
-        ↓
-Results saved to PostgreSQL  (status: COMPLETED)
-        ↓
-Client fetches result via GET /documents/{id}
 ```
+Client
+  │
+  ▼
+┌─────────────────────────────────┐
+│         FastAPI (Port 8000)     │  ← Validates file, extracts text in-memory,
+│     Uvicorn ASGI Web Server     │    saves metadata to DB, returns 202 immediately
+└────────────┬────────────────────┘
+             │ process_pdf.delay(extracted_text, doc_id)
+             ▼
+┌─────────────────────────────────┐
+│       Redis (Task Broker)       │  ← Transports extracted text to the worker
+└────────────┬────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────┐
+│       Celery Worker             │  ← Calls Gemini 2.5 Flash, parses structured
+│  (Background Processing)        │    output, writes result back to PostgreSQL
+└────────────┬────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────┐
+│       PostgreSQL Database       │  ← Stores document metadata, extracted text,
+│      (Persistent Storage)       │    AI summary, and processing status
+└─────────────────────────────────┘
+```
+
+**Why extract text in the API layer, not the worker?**
+Railway runs the API and worker as separate containers with no shared filesystem. Passing a file path to the worker would fail — the file doesn't exist on the worker's container. Instead, the API extracts text into memory and sends the raw string through Redis, making the design both correct and container-safe.
+
+**Why async at all?**
+PDF text extraction and LLM inference can each take several seconds. A synchronous design would block the API thread entirely. The Celery + Redis pattern decouples ingestion from processing, keeping the API responsive under load and making workers independently scalable.
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Web Framework | FastAPI | Async REST API, automatic OpenAPI docs |
+| Task Queue | Celery | Distributed background job processing |
+| Message Broker | Redis 7 | Queue transport between API and workers |
+| Database | PostgreSQL 16 + SQLAlchemy | Persistent document and summary storage |
+| AI Model | Google Gemini 2.5 Flash | Structured PDF summarization |
+| PDF Parsing | PyPDF2 | In-memory text extraction from uploads |
+| Containerisation | Docker + Docker Compose | Reproducible multi-service environment |
+| Deployment | Railway | Production cloud hosting |
 
 ---
 
 ## API Endpoints
 
-| Method | Endpoint          | Description                           |
-| ------ | ----------------- | ------------------------------------- |
-| GET    | `/`               | Health check                          |
-| POST   | `/upload`         | Upload PDF and queue for processing   |
-| GET    | `/documents`      | List all processed documents          |
-| GET    | `/documents/{id}` | Fetch summary for a specific document |
+| Method | Endpoint | Status Code | Description |
+|---|---|---|---|
+| `GET` | `/` | 200 | Health check — confirms API is running |
+| `POST` | `/upload` | 202 | Upload a PDF; queues background processing |
+| `GET` | `/documents` | 200 | List all processed documents |
+| `GET` | `/documents/{id}` | 200 / 404 | Fetch a single document with its summary |
+
+### Upload Flow
+
+```
+POST /upload
+  → validates file (PDF only, max 5MB, must contain extractable text)
+  → extracts text in-memory via PyPDF2
+  → rejects scanned/image-based PDFs with 422
+  → saves Document record to PostgreSQL (status: "processing")
+  → dispatches Celery task with extracted text via Redis
+  → returns 202 { "document_id": 42, "status": "processing" }
+
+(background) Celery worker
+  → receives extracted text from Redis
+  → calls Gemini 2.5 Flash — returns summary, key insights, important topics
+  → writes structured result back to PostgreSQL
+  → sets status: "completed" (or "failed" on error)
+
+GET /documents/42
+  → returns document with full AI-generated summary
+```
+
+### Example Request
+
+```bash
+curl -X POST https://pdf-summarizer-api-production.up.railway.app/upload \
+  -F "file=@your_document.pdf"
+```
+
+### Example Upload Response (202)
+
+```json
+{
+  "message": "PDF uploaded and queued for processing",
+  "document_id": 7,
+  "status": "processing"
+}
+```
+
+### Example Document Response (200)
+
+```json
+{
+  "id": 7,
+  "original_filename": "research_paper.pdf",
+  "status": "completed",
+  "summary": "1. Summary: This paper investigates...\n2. Key Insights:\n- ...\n3. Important Topics: ...",
+  "extracted_text": "Full extracted text...",
+  "created_at": "2025-06-03T10:22:00Z"
+}
+```
+
+---
+
+## Validation & Error Handling
+
+Multiple layers of validation protect every upload before any database or AI resources are touched:
+
+| Check | Error |
+|---|---|
+| Missing filename | `400` File must have a name |
+| Wrong extension | `400` File must be a PDF |
+| Wrong content-type | `400` Only PDF files are allowed |
+| File exceeds 5MB | `400` File size exceeds 5MB limit |
+| Scanned / image-based PDF | `422` Could not extract text |
+| Document not found | `404` Document not found |
+| Gemini or DB failure | Sets `status: "failed"` in DB, re-raises exception |
 
 ---
 
 ## Local Setup
 
-### 1. Clone Repository
+### Prerequisites
+
+- Docker & Docker Compose
+- A Google Gemini API key — [get one here](https://aistudio.google.com/)
+
+### 1. Clone
 
 ```bash
 git clone https://github.com/faraiz88/PDF-Summarizer-API.git
 cd PDF-Summarizer-API
 ```
 
-### 2. Create `.env`
+### 2. Environment Variables
+
+Create a `.env` file (see `.env.example`):
 
 ```env
-GOOGLE_API_KEY=your_gemini_api_key    # Get from Google AI Studio (free tier available)
-DATABASE_URL=postgresql://username:password@postgres:5432/pdf_summarizer
+GOOGLE_API_KEY=your_gemini_api_key_here
+DATABASE_URL=postgresql://faraiz:yourpassword@postgres:5432/pdf_summarizer
 REDIS_URL=redis://redis:6379/0
+POSTGRES_PASSWORD=yourpassword
 ```
 
 ### 3. Start All Services
@@ -136,31 +191,64 @@ REDIS_URL=redis://redis:6379/0
 docker-compose up --build
 ```
 
-This starts four services: FastAPI, PostgreSQL, Redis, and the Celery worker.
+This starts four containers simultaneously: `api`, `worker`, `redis`, and `postgres`.
 
-### 4. Open Swagger UI
+### 4. Open the Docs
 
 ```
-http://127.0.0.1:8000/docs
+http://localhost:8001/docs
 ```
 
 ---
 
-## Known Limitations
+## Project Structure
 
-- Scanned/image-based PDFs are not supported — PyPDF2 only extracts selectable text
-- No authentication on endpoints yet
-- Very large PDFs (100+ pages) may hit Gemini's input token limits
-- Live deployment not hosted — Gemini AI API costs make free-tier hosting impractical
+```
+PDF-Summarizer-API/
+├── app/
+│   ├── main.py           # FastAPI routes, file validation, upload handling
+│   ├── celery_worker.py  # Celery config, process_pdf task, Gemini integration
+│   ├── models.py         # SQLAlchemy ORM — Document table
+│   ├── schemas.py        # Pydantic response schemas
+│   └── database.py       # DB engine, session factory, Base
+├── docker-compose.yml    # Multi-service orchestration (api, worker, redis, postgres)
+├── Dockerfile            # Python image, dependency installation
+├── requirements.txt      # Pinned dependencies
+├── create_tables.py      # Database initialisation helper
+└── .env.example          # Environment variable template
+```
 
 ---
 
-## License
+## Key Design Decisions
 
-MIT License
+**Container-safe file handling**
+Railway deploys each service as an isolated container. Storing the uploaded file to disk and passing a path to the worker would break — the worker has no access to the API container's filesystem. The API extracts text into memory and passes it through Redis, keeping the architecture stateless and cloud-native.
+
+**`status: "failed"` on worker errors**
+If Gemini's API is down, rate-limits, or throws any exception, the Celery task catches it, opens a fresh DB session, and marks the document as `"failed"` before re-raising. This prevents documents from being stuck in `"processing"` forever.
+
+**Structured AI output**
+The Gemini prompt explicitly requests three sections — a concise summary, bullet-point key insights, and a list of important topics. This makes the API output consistently parseable rather than free-form text.
+
+**202 Accepted on upload**
+The upload endpoint returns `202 Accepted` rather than `200 OK` to correctly signal that processing is asynchronous. `200` means "done"; `202` means "received and queued."
+
+---
+
+## What I'd Add Next
+
+- [ ] `GET /tasks/{task_id}` — Celery task status polling endpoint
+- [ ] Re-summarise endpoint — trigger a new Gemini pass with a custom prompt
+- [ ] JWT authentication — per-user document isolation
+- [ ] Large PDF chunking — split documents and summarise in parallel Celery tasks
+- [ ] Upstash Redis + Neon PostgreSQL — managed cloud services, lower cold-start
+- [ ] Prometheus + Grafana — task throughput and latency observability
 
 ---
 
 ## Author
 
-Mohammed Faraiz
+**Mohammed Faraiz**
+
+[![GitHub](https://img.shields.io/badge/GitHub-faraiz88-181717?style=flat&logo=github)](https://github.com/faraiz88)
