@@ -82,51 +82,35 @@ def get_documents():
 async def upload_pdf(file: UploadFile = File(...)):
     logger.info(f"Upload request received: {file.filename}")
 
-    # Validate filename
     if not file.filename:
-        logger.warning("Upload attempted with missing filename")
         raise HTTPException(status_code=400, detail="File must have a name")
 
-    # Validate extension
     if not file.filename.lower().endswith(".pdf"):
-        logger.warning(f"Invalid file extension uploaded: {file.filename}")
         raise HTTPException(status_code=400, detail="File must be a PDF")
 
-    # Validate content type
     if file.content_type != "application/pdf":
-        logger.warning(f"Invalid content type uploaded: {file.content_type}")
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
-    # Read file
     contents = await file.read()
 
-    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-    if len(contents) > MAX_FILE_SIZE:
-        logger.warning(f"File too large: {file.filename}")
-        raise HTTPException(status_code=400, detail="File too large. Maximum size is 5MB.")
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large")
 
-    # Extract text directly (NO FILE STORAGE)
-    try:
-        from PyPDF2 import PdfReader
-        import io
+    # Extract text in API
+    from PyPDF2 import PdfReader
+    import io
 
-        pdf_reader = PdfReader(io.BytesIO(contents))
+    pdf_reader = PdfReader(io.BytesIO(contents))
 
-        extracted_text = ""
-        for page in pdf_reader.pages:
-            extracted_text += page.extract_text() or ""
-
-    except Exception as e:
-        logger.error(f"Failed to extract text: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to extract PDF text")
+    extracted_text = ""
+    for page in pdf_reader.pages:
+        extracted_text += page.extract_text() or ""
 
     db = SessionLocal()
 
     try:
-        # Create database record
         new_document = Document(
             original_filename=file.filename,
-            stored_filename=None,  # no file stored anymore
             extracted_text=None,
             summary=None,
             status="processing"
@@ -136,28 +120,12 @@ async def upload_pdf(file: UploadFile = File(...)):
         db.commit()
         db.refresh(new_document)
 
-        logger.info(f"Database record created: {new_document.id}")
-
-        # Send TEXT to Celery (NOT file path anymore)
-        try:
-            process_pdf.delay(extracted_text, new_document.id)
-
-            logger.info(
-                f"Celery task started for document ID: {new_document.id}"
-            )
-
-        except Exception as e:
-            logger.error(f"Failed to start Celery task: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to start background task"
-            )
+        # send TEXT to celery
+        process_pdf.delay(extracted_text, new_document.id)
 
         return {
-            "message": "PDF uploaded successfully",
-            "document_id": new_document.id,
-            "original_filename": file.filename,
-            "status": "processing started"
+            "message": "uploaded",
+            "document_id": new_document.id
         }
 
     finally:

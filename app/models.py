@@ -8,8 +8,8 @@ class Document(Base):
     id = Column(Integer, primary_key=True, index=True)
     original_filename = Column(String, nullable=False)
 
-    extracted_text = Column(Text)
-    summary = Column(Text)
+    extracted_text = Column(Text, nullable=True)
+    summary = Column(Text, nullable=True)
 
     status = Column(String, default="processing")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
