@@ -4,7 +4,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
 [![Live API](https://img.shields.io/badge/Live%20API-Railway-blueviolet)](https://pdf-summarizer-api-production.up.railway.app/docs)
 
-A backend API that accepts any PDF and returns a structured AI-generated summary, key insights, and important topics — processed asynchronously via Celery and Gemini AI.
+A backend API that accepts text-based PDFs and returns AI-generated summaries processed asynchronously using Celery and Gemini AI.
 
 ---
 
