@@ -106,6 +106,13 @@ POST /upload
   → sets status: "completed" (or "failed" on error)
 ```
 
+### Validation Rules
+
+- PDF files only
+- Maximum size: 5 MB
+- Must contain extractable text
+- Scanned or image-only PDFs are rejected
+
 ### Example Request
 
 ```bash
