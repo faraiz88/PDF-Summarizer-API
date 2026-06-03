@@ -113,6 +113,38 @@ curl -X POST https://pdf-summarizer-api-production.up.railway.app/upload \
   -F "file=@your_document.pdf"
 ```
 
+### Example Upload Response (202)
+
+```json
+
+{
+  "message": "PDF uploaded and queued for processing",
+  "document_id": 8,
+  "status": "processing"
+}
+
+```
+
+### Example Document Response (200)
+
+```json
+
+{
+
+  "id": 8,
+
+  "original_filename": "Hyderabad_Weather_Report.pdf",
+
+  "status": "completed",
+
+  "summary": "On Wednesday, June 3, 2026, Hyderabad, Telangana, is experiencing warm, humid, and partly sunny conditions at 84.9°F (29.4°C). There is a high (65%) probability of intermittent rain and possible thunderstorms later today, especially in the late afternoon and evening, marking the early transition to the Southwest Monsoon.\n\nThe 5-day forecast predicts continued warm temperatures (around 93-95°F / 34-35°C) with daily rain chances of 55-60%. The current weather is consistent with the imminent arrival of the monsoon, typically between June 5-15. Residents are advised to stay hydrated, carry rain gear, drive cautiously, and take general health and safety precautions for the approaching monsoon season.",
+
+  "created_at": "2026-06-03T02:30:36.488209"
+
+}
+
+```
+
 ---
 
 ## Local Setup
