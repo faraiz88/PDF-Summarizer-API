@@ -8,6 +8,13 @@ A backend API that accepts any PDF and returns a structured AI-generated summary
 
 ---
 
+## Live Deployment
+
+- **API:** https://pdf-summarizer-api-production.up.railway.app
+- **Swagger Docs:** https://pdf-summarizer-api-production.up.railway.app/docs
+
+---
+
 ## Demo
 
 ![Demo](./assets/demo.gif)
